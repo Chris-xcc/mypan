@@ -1,15 +1,12 @@
 [[source]]
-name = "pypi"
 url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 verify_ssl = true
+name = "pypi"
+
+[packages]
+fastapi = {extras = ["all"], version = "*"}
 
 [dev-packages]
 
-[packages]
-fastapi = "*"
-uvicorn = "*"
-python-multipart = "*"
-aiofiles = "*"
-
 [requires]
-python_version = "3.7"
+python_version = "3.8"

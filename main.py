@@ -1,10 +1,12 @@
-from fastapi import FastAPI, UploadFile, File  # Fastapi
-from fastapi.middleware.cors import CORSMiddleware  # 跨域调用
-from starlette.requests import Request
-from starlette.responses import FileResponse, RedirectResponse
-from starlette.templating import Jinja2Templates
-import uvicorn
 import os
+from pathlib import Path
+from typing import List
+
+import uvicorn
+from fastapi import FastAPI, UploadFile, File, Request
+from fastapi.middleware.cors import CORSMiddleware  # 跨域调用
+from fastapi.responses import RedirectResponse, FileResponse
+from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
 # origins = ['*']  # 或者 ['http://wicos.me'] 可以自定义允许访问的地址
@@ -16,47 +18,48 @@ app = FastAPI()
 #     allow_headers=['*'],
 # )
 templates = Jinja2Templates(directory='templates')
+BASE_DIR = Path(__file__).resolve().parent
+VIRUS_EXTENSION_NAME = [
+    'exe', 'scr', 'com', 'vb', 'vbs', 'js', 'VBS',
+    'VBE', 'JS', 'JSE', 'WSH', 'WSF', 'bat', 'sh', 'inf'
+]
+VIRUS = [virus for virus in map(lambda x: '.' + x, VIRUS_EXTENSION_NAME)]
+
+FILE_PATH = BASE_DIR.joinpath('file')
 
 
 def get_files():
-    os.chdir('file')
-    files = os.listdir(os.getcwd())
-    os.chdir('..')
-    return files
+    files = [os.path.basename(str(path)) for path in FILE_PATH.iterdir()]
+    yield files
 
 
 @app.post("/uploadfile/")
-async def upload(request: Request, file: UploadFile = File(...)):
-    print(file.filename)
-    if file.filename:
-        viruses = ['exe', 'scr', 'com', 'vb', 'vbs', 'js', 'VBS', 'VBE', 'JS', 'JSE', 'WSH', 'WSF']
-        # print(file.filename)
-        extension_name = os.path.splitext(file.filename)[-1]
-        if extension_name in viruses:
-            return templates.TemplateResponse('index.html', {'request': request, 'fail': '上传失败'})
+async def upload(request: Request, files: List[UploadFile] = File(...)):
+    for file in files:
+        if file.filename:
+            extension_name = Path(file.filename).suffix
+            if extension_name in VIRUS:
+                return templates.TemplateResponse('index.html',
+                                                  {'request': request, 'files': get_files(), 'fail': '上传失败'})
+            else:
+                file_data = await file.read()
+                with open('./file/' + file.filename, 'wb')as f:
+                    f.write(file_data)
         else:
-            files = get_files()
-            file_data = await file.read()
-            with open('./file/' + file.filename, 'wb')as f:
-                f.write(file_data)
-            files.append(file.filename)
-            return templates.TemplateResponse('index.html', {'request': request, 'files': files, 'success': '上传成功'})
-    else:
-        return RedirectResponse('http://127.0.0.1:8000/')
+            return RedirectResponse('http://127.0.0.1:8000/')
+    return templates.TemplateResponse('index.html', {'request': request, 'files': get_files(), 'success': '上传成功'})
 
 
 @app.get("/download/{file_name}")
 def download(file_name: str):
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    path = basedir + r'/file/' + file_name
+    path = str(FILE_PATH.joinpath(file_name))
     return FileResponse(path)
 
 
 @app.get("/")
 async def index(request: Request):
-    files = get_files()
-    return templates.TemplateResponse('index.html', {'request': request, 'files': files})
+    return templates.TemplateResponse('index.html', {'request': request, 'files': get_files()})
 
 
 if __name__ == '__main__':
-    uvicorn.run(app=app, host='0.0.0.0', port=8000)
+    uvicorn.run(app=app, host='0.0.0.0', port=8000, debug=True)
