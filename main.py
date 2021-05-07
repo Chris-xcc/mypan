@@ -33,6 +33,13 @@ def get_files():
     yield files
 
 
+def write_file(file):
+    with open('./file/{}'.format(file.filename), 'wb')as f:
+        for i in iter(lambda: file.file.read(1024 * 1024 * 10), b''):
+            print(type(i))
+            f.write(i)
+
+
 @app.post("/uploadfile/")
 async def upload(request: Request, files: List[UploadFile] = File(...)):
     for file in files:
@@ -42,9 +49,7 @@ async def upload(request: Request, files: List[UploadFile] = File(...)):
                 return templates.TemplateResponse('index.html',
                                                   {'request': request, 'files': get_files(), 'fail': '上传失败'})
             else:
-                file_data = await file.read()
-                with open('./file/' + file.filename, 'wb')as f:
-                    f.write(file_data)
+                write_file(file)
         else:
             return RedirectResponse('http://127.0.0.1:8000/')
     return templates.TemplateResponse('index.html', {'request': request, 'files': get_files(), 'success': '上传成功'})
@@ -62,4 +67,4 @@ async def index(request: Request):
 
 
 if __name__ == '__main__':
-    uvicorn.run(app=app, host='0.0.0.0', port=8000, debug=True)
+    uvicorn.run(app, host='0.0.0.0', port=8000, )
