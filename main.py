@@ -6,6 +6,7 @@ import uvicorn
 from fastapi import FastAPI, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware  # 跨域调用
 from fastapi.responses import RedirectResponse, FileResponse
+from starlette.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
@@ -18,6 +19,8 @@ app = FastAPI()
 #     allow_headers=['*'],
 # )
 templates = Jinja2Templates(directory='templates')
+app.mount('/templates', StaticFiles(directory='templates'), name='templates')
+
 BASE_DIR = Path(__file__).resolve().parent
 VIRUS_EXTENSION_NAME = [
     'exe', 'scr', 'com', 'vb', 'vbs', 'js', 'VBS',
