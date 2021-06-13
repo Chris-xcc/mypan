@@ -2,15 +2,15 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <link rel="apple-touch-icon" sizes="76x76" href="{{ url_for('templates', path='/favicon.ico') }}">
-        <link rel="icon" href="{{ url_for('templates', path='/favicon.ico') }}" rel="stylesheet">
+        <link rel="apple-touch-icon" sizes="76x76" href="{{ url_for('static', path='/favicon.ico') }}">
+        <link rel="icon" href="{{ url_for('static', path='/favicon.ico') }}" rel="stylesheet">
         <title>Title</title>
     </head>
     <body>
         <div>{{ fail }}</div>
         <div>{{ success }}</div>
         <div class="container">
-            <form action="/uploadfile/" method="post" enctype="multipart/form-data">
+            <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
                 <input type="file" name="files" multiple="multiple">
                 <button>上传</button>
             </form>
@@ -18,9 +18,8 @@
 
         {% for file in files %}
             {% for f in file %}
-                <div><a href="/download/{{ f }}"> {{ f }} </a></div>
+                <div><a href="{{ url_for('download', file_name=f) }}"> {{ f }} </a></div>
             {% endfor %}
         {% endfor %}
-
     </body>
 </html>
